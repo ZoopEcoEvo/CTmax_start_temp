@@ -1,6 +1,6 @@
-exp_date,start_temp,tube,ctmax,length
-2026-06-12,16,1,35.8,0.93
-2026-06-12,16,3,35.6,0.92
-2026-06-12,16,5,36.2,0.95
-2026-06-12,16,9,36.5,1.0
-2026-06-12,16,11,35.7,0.98
+exp_date,species,start_temp,tube,ctmax,length
+2026-06-12,Skistodiaptomus pallidus,16,1,35.8,0.93
+2026-06-12,Skistodiaptomus pallidus,16,3,35.6,0.92
+2026-06-12,Skistodiaptomus pallidus,16,5,36.2,0.95
+2026-06-12,Skistodiaptomus pallidus,16,9,36.5,1.0
+2026-06-12,Skistodiaptomus pallidus,16,11,35.7,0.98

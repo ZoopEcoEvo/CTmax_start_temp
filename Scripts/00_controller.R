@@ -24,19 +24,39 @@ logger_16c = read.csv("Raw_data/temp_loggers/2026_06_12_16c.csv") %>%
   janitor::clean_names() %>% 
   select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
   mutate(datetime = mdy_hms(datetime), 
-         time_point = row_number(), 
+         time_point = 0.5 + (row_number() * 0.5), 
          start_temp = "16", 
-         ten_min_int = ceiling(time_point / 20))
+         ten_min_int = ceiling(time_point / 10)) %>% 
+  filter(ten_min_int >= 5)
 
 logger_22c = read.csv("Raw_data/temp_loggers/2026_06_12_22c.csv") %>% 
   janitor::clean_names() %>% 
   select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
   mutate(datetime = mdy_hms(datetime), 
-         time_point = row_number(), 
+         time_point = 0.5 + (row_number() * 0.5), 
          start_temp = "22", 
-         ten_min_int = ceiling(time_point / 20))
+         ten_min_int = ceiling(time_point / 10)) %>% 
+  filter(ten_min_int >= 5)
 
-comb_data = bind_rows(logger_16c, logger_22c)
+logger_25c = read.csv("Raw_data/temp_loggers/2026_06_29_25c.csv") %>% 
+  janitor::clean_names() %>% 
+  select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
+  mutate(datetime = mdy_hms(datetime), 
+         time_point = row_number(), 
+         start_temp = "25", 
+         ten_min_int = ceiling(time_point / 10)) %>% 
+  filter(ten_min_int >= 2)
+
+logger_13c = read.csv("Raw_data/temp_loggers/2026_06_29_13c.csv") %>% 
+  janitor::clean_names() %>% 
+  select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
+  mutate(datetime = mdy_hms(datetime), 
+         time_point = row_number(), 
+         start_temp = "13", 
+         ten_min_int = ceiling(time_point / 10)) %>% 
+  filter(ten_min_int >= 2)
+
+comb_data = bind_rows(logger_16c, logger_22c, logger_25c, logger_13c)
 
 
 trait_data = readr::read_csv(list.files(path = "Raw_data/ctmax_data/", 

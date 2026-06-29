@@ -98,8 +98,8 @@ ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) +
   labs(y = "Water Temp. (°C)",
        colour = "Start Temp. (°C)", 
        x = "Assay Time (minutes)") + 
-  scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+    theme_matt() + 
+  theme(legend.position = "right")
 ```
 
 Ramping rates (calculated for 10 minute intervals throughout the experiment) decreased over time, as expected.
@@ -107,15 +107,13 @@ Ramping rates (calculated for 10 minute intervals throughout the experiment) dec
 ```{r}
 
 mean_temps = comb_data %>% 
-  mutate(minutes = time_point / 2) %>% 
-  filter(time_point > 75) %>% 
+  mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
   group_by(start_temp, ten_min_int) %>% 
   summarise(mean_temp = mean(temp_c))
 
 ramp_rates = comb_data %>% 
-  mutate(minutes = time_point / 2) %>% 
-  filter(time_point > 75) %>% 
+  mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
   group_by(start_temp, ten_min_int) %>% 
   nest() %>%
@@ -134,10 +132,10 @@ ramp_rates = comb_data %>%
 ggplot(ramp_rates, aes(x = ten_min_int, y = estimate, colour = start_temp)) + 
   geom_point() + 
   labs(y = "Ramp Rate (°C per minute)",
-       x = "Assay Time (minutes)", 
+       x = "Ten Minute Interval", 
        colour = "Start Temp. (°C)") + 
-    scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+    theme_matt() + 
+  theme(legend.position = "right")
 ```
 
 As shown in previous work with this setup, this decrease in ramping rates was strongly related to the average water temperature during the time interval, regardless of starting temperature.
@@ -149,8 +147,8 @@ ggplot(ramp_rates, aes(x = mean_temp, y = estimate, colour = start_temp)) +
   labs(y = "Ramp Rate (°C per minute)",
        x = "Average Temp. (°C)", 
        colour = "Start Temp. (°C)") + 
-      scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+  theme_matt() + 
+  theme(legend.position = "right")
 
 ```
 
@@ -161,11 +159,12 @@ There was no relationship between observed CTmax and the starting temperature.
 ```{r}
 
 ggplot(trait_data, aes(x = start_temp, y = ctmax)) + 
+  facet_grid(species~.) + 
   geom_point(size = 3) + 
   geom_smooth(method = "lm") + 
   labs(y = "CTmax (°C)",
        x = "Start Temp. (°C)") + 
-  theme_classic(base_size = 18)
+  theme_matt_facets()
 
 ```
 
@@ -174,12 +173,19 @@ This is supported by the results of a linear regression, which shows no relation
 ```{r}
 
 temp.model = lm(data = trait_data, 
-                ctmax ~ start_temp)
+                ctmax ~ species * start_temp)
 
 summary(temp.model)
 
-car::Anova(temp.model)
+car::Anova(temp.model, type = "III")
 
+```
+
+```{r}
+ggplot(trait_data, aes(x = species, y = ctmax)) + 
+  geom_boxplot() + 
+  geom_point() + 
+  theme_matt()
 ```
 
 
