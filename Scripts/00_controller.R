@@ -1,6 +1,7 @@
 # Load in required packages
 library(rmarkdown)
 library(tidyverse)
+library(broom)
 
 #Determine which scripts should be run
 process_data = F #Runs data analysis 
@@ -18,6 +19,30 @@ if(process_data == T){
 ##################################
 ### Read in the PROCESSED data ###
 ##################################
+
+logger_16c = read.csv("Raw_data/temp_loggers/2026_06_12_16c.csv") %>% 
+  janitor::clean_names() %>% 
+  select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
+  mutate(datetime = mdy_hms(datetime), 
+         time_point = row_number(), 
+         start_temp = "16", 
+         ten_min_int = ceiling(time_point / 20))
+
+logger_22c = read.csv("Raw_data/temp_loggers/2026_06_12_22c.csv") %>% 
+  janitor::clean_names() %>% 
+  select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
+  mutate(datetime = mdy_hms(datetime), 
+         time_point = row_number(), 
+         start_temp = "22", 
+         ten_min_int = ceiling(time_point / 20))
+
+comb_data = bind_rows(logger_16c, logger_22c)
+
+
+trait_data = readr::read_csv(list.files(path = "Raw_data/ctmax_data/", 
+                                        pattern = "*.csv", 
+                                        full.names = TRUE),
+                             show_col_types = FALSE)
 
 if(make_report == T){
   render(input = "Output/Reports/report.Rmd", #Input the path to your .Rmd file here
