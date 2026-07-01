@@ -90,7 +90,23 @@ While the effect of start temperature can be quite clear, the underlying mechani
 
 In theory, without confounding effects of other processes like dehydration and starvation, starting temperature should have minimal effect on CTmax so long as the assay starts below the critical temperature, or the point where damage accumulation outpaces damage repair [@faber]. This project examines how CTmax varies with starting temperature in Skistodiaptomus pallidus, a widespread freshwater calanoid copepod.
 
-For the initial assays, we tracked temperature in the water bath during the experiments. The temperatures increased steadily throughout the assays.
+## Methods
+
+We ran CTmax assays starting at different temperatures for several species, spanning a range of prior conditions.
+
+| Species                   | Acclimation History                                     | Acclimation Temperature     |
+|------------------|-----------------------------------|-------------------|
+| Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
+| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23\*C                       |
+| Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
+
+We followed a standard protocol for measuring CTmax in copepods. Briefly, a small water bath was filled with 2 L of water and adjusted to the desired temperature either by adding ice or with a small aquarium heater. Once at the correct temperature, copepods were added individually into 50 mL glass vials with 10 mL of artificial freshwater medium. Vials were held in the water bath and the water was already equilibrated to the bath temperature. As such, the transition from holding temperature to starting temperature was acute.
+
+## Results
+
+### Water temperatures and ramping rates
+
+We tracked temperature in the water bath during one replicate for each starting temperature to ensure that ramping rates behaved as expected. Temperature loggers were placed in each water bath and recorded temperature every 30 seconds (every 1 minute in some cases).
 
 ```{r}
 ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) + 
@@ -102,7 +118,7 @@ ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) +
   theme(legend.position = "right")
 ```
 
-Ramping rates (calculated for 10 minute intervals throughout the experiment) decreased over time, as expected.
+Ramping rates (calculated for 5 minute intervals throughout the experiment) decreased over time, as expected.
 
 ```{r}
 
@@ -130,7 +146,7 @@ ramp_rates = comb_data %>%
 
 
 ggplot(ramp_rates, aes(x = ten_min_int, y = estimate, colour = start_temp)) + 
-  geom_point() + 
+  geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
        x = "Ten Minute Interval", 
        colour = "Start Temp. (°C)") + 
@@ -143,7 +159,7 @@ As shown in previous work with this setup, this decrease in ramping rates was st
 ```{r}
 
 ggplot(ramp_rates, aes(x = mean_temp, y = estimate, colour = start_temp)) + 
-  geom_point() + 
+  geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
        x = "Average Temp. (°C)", 
        colour = "Start Temp. (°C)") + 
@@ -172,8 +188,14 @@ This is supported by the results of a linear regression, which shows no relation
 
 ```{r}
 
-temp.model = lm(data = trait_data, 
-                ctmax ~ species * start_temp)
+model_data = trait_data %>% 
+  mutate(ctmax_cent = scale(ctmax, center = T, scale = F),
+         start_cent = scale(start_temp, center = T, scale = F))
+
+temp.model = lme4::lmer(data = model_data, 
+                ctmax ~ species * start_temp + (1|tube))
+
+performance::check_model(temp.model)
 
 summary(temp.model)
 
@@ -182,11 +204,32 @@ car::Anova(temp.model, type = "III")
 ```
 
 ```{r}
+
+emmeans::emmeans(temp.model, ~species) %>% plot() + labs(x = "Marginal Mean (°C)",
+                                                         y = "Species") + theme_matt()
+
+```
+
+
+```{r}
 ggplot(trait_data, aes(x = species, y = ctmax)) + 
   geom_boxplot() + 
   geom_point() + 
+  labs(x = "Species", 
+       y = "CTmax (°C)") + 
   theme_matt()
 ```
 
+```{r}
+
+trait_data %>%  
+  filter(!is.na(length)) %>% 
+  ggplot(aes(x = length, y = ctmax, colour = species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  theme_matt() + 
+  theme(legend.position = "right")
+
+```
 
 ## References

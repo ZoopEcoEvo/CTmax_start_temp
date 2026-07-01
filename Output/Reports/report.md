@@ -1,7 +1,11 @@
 Start temperature does not affect copepod CTmax
 ================
-2026-06-29
+2026-06-30
 
+- [Methods](#methods)
+- [Results](#results)
+  - [Water temperatures and ramping
+    rates](#water-temperatures-and-ramping-rates)
 - [CTmax Data](#ctmax-data)
 - [References](#references)
 
@@ -26,9 +30,34 @@ repair (Faber et al., n.d.). This project examines how CTmax varies with
 starting temperature in Skistodiaptomus pallidus, a widespread
 freshwater calanoid copepod.
 
-For the initial assays, we tracked temperature in the water bath during
-the experiments. The temperatures increased steadily throughout the
-assays.
+## Methods
+
+We ran CTmax assays starting at different temperatures for several
+species, spanning a range of prior conditions.
+
+| Species                   | Acclimation History                                     | Acclimation Temperature     |
+|---------------------------|---------------------------------------------------------|-----------------------------|
+| Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
+| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23\*C                       |
+| Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
+
+We followed a standard protocol for measuring CTmax in copepods.
+Briefly, a small water bath was filled with 2 L of water and adjusted to
+the desired temperature either by adding ice or with a small aquarium
+heater. Once at the correct temperature, copepods were added
+individually into 50 mL glass vials with 10 mL of artificial freshwater
+medium. Vials were held in the water bath and the water was already
+equilibrated to the bath temperature. As such, the transition from
+holding temperature to starting temperature was acute.
+
+## Results
+
+### Water temperatures and ramping rates
+
+We tracked temperature in the water bath during one replicate for each
+starting temperature to ensure that ramping rates behaved as expected.
+Temperature loggers were placed in each water bath and recorded
+temperature every 30 seconds (every 1 minute in some cases).
 
 ``` r
 ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) + 
@@ -36,27 +65,25 @@ ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) +
   labs(y = "Water Temp. (°C)",
        colour = "Start Temp. (°C)", 
        x = "Assay Time (minutes)") + 
-  scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+    theme_matt() + 
+  theme(legend.position = "right")
 ```
 
 <img src="../Figures/markdown/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
 
-Ramping rates (calculated for 10 minute intervals throughout the
+Ramping rates (calculated for 5 minute intervals throughout the
 experiment) decreased over time, as expected.
 
 ``` r
 
 mean_temps = comb_data %>% 
-  mutate(minutes = time_point / 2) %>% 
-  filter(time_point > 75) %>% 
+  mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
   group_by(start_temp, ten_min_int) %>% 
   summarise(mean_temp = mean(temp_c))
 
 ramp_rates = comb_data %>% 
-  mutate(minutes = time_point / 2) %>% 
-  filter(time_point > 75) %>% 
+  mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
   group_by(start_temp, ten_min_int) %>% 
   nest() %>%
@@ -73,12 +100,12 @@ ramp_rates = comb_data %>%
 
 
 ggplot(ramp_rates, aes(x = ten_min_int, y = estimate, colour = start_temp)) + 
-  geom_point() + 
+  geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
-       x = "Assay Time (minutes)", 
+       x = "Ten Minute Interval", 
        colour = "Start Temp. (°C)") + 
-    scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+    theme_matt() + 
+  theme(legend.position = "right")
 ```
 
 <img src="../Figures/markdown/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
@@ -90,12 +117,12 @@ time interval, regardless of starting temperature.
 ``` r
 
 ggplot(ramp_rates, aes(x = mean_temp, y = estimate, colour = start_temp)) + 
-  geom_point() + 
+  geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
        x = "Average Temp. (°C)", 
        colour = "Start Temp. (°C)") + 
-      scale_colour_manual(values = c("royalblue", "coral")) + 
-  theme_classic(base_size = 18)
+  theme_matt() + 
+  theme(legend.position = "right")
 ```
 
 <img src="../Figures/markdown/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
@@ -108,11 +135,12 @@ temperature.
 ``` r
 
 ggplot(trait_data, aes(x = start_temp, y = ctmax)) + 
+  facet_grid(species~.) + 
   geom_point(size = 3) + 
   geom_smooth(method = "lm") + 
   labs(y = "CTmax (°C)",
        x = "Start Temp. (°C)") + 
-  theme_classic(base_size = 18)
+  theme_matt_facets()
 ```
 
 <img src="../Figures/markdown/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
@@ -122,37 +150,83 @@ relationship between CTmax and starting temperature.
 
 ``` r
 
-temp.model = lm(data = trait_data, 
-                ctmax ~ start_temp)
+model_data = trait_data %>% 
+  mutate(ctmax_cent = scale(ctmax, center = T, scale = F),
+         start_cent = scale(start_temp, center = T, scale = F))
+
+temp.model = lme4::lmer(data = model_data, 
+                ctmax_cent ~ species * start_cent + (1|tube))
+
+performance::check_model(temp.model)
 
 summary(temp.model)
+## Linear mixed model fit by REML ['lmerMod']
+## Formula: ctmax_cent ~ species * start_cent + (1 | tube)
+##    Data: model_data
 ## 
-## Call:
-## lm(formula = ctmax ~ start_temp, data = trait_data)
+## REML criterion at convergence: 92.8
 ## 
-## Residuals:
+## Scaled residuals: 
 ##      Min       1Q   Median       3Q      Max 
-## -1.62667 -0.29767 -0.01667  0.43733  1.07333 
+## -3.03791 -0.56219  0.00249  0.75499  2.00452 
 ## 
-## Coefficients:
-##             Estimate Std. Error t value Pr(>|t|)    
-## (Intercept)  36.0627     0.4247  84.909   <2e-16 ***
-## start_temp   -0.0120     0.0201  -0.597    0.555    
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  tube     (Intercept) 0.0000   0.0000  
+##  Residual             0.2867   0.5355  
+## Number of obs: 50, groups:  tube, 6
+## 
+## Fixed effects:
+##                                             Estimate Std. Error t value
+## (Intercept)                                 0.869000   0.119732   7.258
+## speciesSkistodiaptomus pallidus            -1.448333   0.154573  -9.370
+## start_cent                                  0.002549   0.019359   0.132
+## speciesSkistodiaptomus pallidus:start_cent -0.014549   0.027182  -0.535
+## 
+## Correlation of Fixed Effects:
+##             (Intr) spcsSp strt_c
+## spcsSkstdpp -0.775              
+## start_cent   0.000  0.000       
+## spcsSplld:_  0.000  0.000 -0.712
+## optimizer (nloptwrap) convergence code: 0 (OK)
+## boundary (singular) fit: see help('isSingular')
+
+car::Anova(temp.model, type = "III")
+## Analysis of Deviance Table (Type III Wald chisquare tests)
+## 
+## Response: ctmax_cent
+##                      Chisq Df Pr(>Chisq)    
+## (Intercept)        52.6771  1  3.931e-13 ***
+## species            87.7952  1  < 2.2e-16 ***
+## start_cent          0.0173  1     0.8952    
+## species:start_cent  0.2865  1     0.5925    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## Residual standard error: 0.564 on 28 degrees of freedom
-## Multiple R-squared:  0.01257,    Adjusted R-squared:  -0.0227 
-## F-statistic: 0.3564 on 1 and 28 DF,  p-value: 0.5553
-
-car::Anova(temp.model)
-## Anova Table (Type II tests)
-## 
-## Response: ctmax
-##            Sum Sq Df F value Pr(>F)
-## start_temp 0.1134  1  0.3564 0.5553
-## Residuals  8.9083 28
 ```
+
+``` r
+ggplot(trait_data, aes(x = species, y = ctmax)) + 
+  geom_boxplot() + 
+  geom_point() + 
+  labs(x = "Species", 
+       y = "CTmax (°C)") + 
+  theme_matt()
+```
+
+<img src="../Figures/markdown/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+
+``` r
+
+trait_data %>%  
+  filter(!is.na(length)) %>% 
+  ggplot(aes(x = length, y = ctmax, colour = species)) + 
+  geom_point() + 
+  geom_smooth(method = "lm") + 
+  theme_matt() + 
+  theme(legend.position = "right")
+```
+
+<img src="../Figures/markdown/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 ## References
 
