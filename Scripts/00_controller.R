@@ -6,7 +6,7 @@ library(lme4)
 library(lmerTest)
 
 #Determine which scripts should be run
-make_report = F #Runs project summary
+make_report = T #Runs project summary
 knit_manuscript = F #Compiles manuscript draft
 
 ############################
@@ -58,7 +58,18 @@ logger_28c = read.csv("Raw_data/temp_loggers/2026_06_30_28c.csv") %>%
          ten_min_int = ceiling(time_point / 5)) %>% 
   filter(ten_min_int >= 2)
 
-comb_data = bind_rows(logger_16c, logger_22c, logger_25c, logger_13c, logger_28c)
+logger_16c_b = read.csv("Raw_data/temp_loggers/2026_06_30_16c.csv") %>% 
+  janitor::clean_names() %>% 
+  select("datetime" = date_time_edt, "temp_c" = temperature_c) %>% 
+  mutate(datetime = mdy_hms(datetime), 
+         time_point = 0.5 + (row_number() * 0.5), 
+         start_temp = "16", 
+         ten_min_int = ceiling(time_point / 5)) %>% 
+  filter(ten_min_int >= 2 & ten_min_int < 25)
+
+comb_data = bind_rows(logger_16c, logger_22c, logger_25c, logger_13c, logger_28c, logger_16c_b) %>% 
+  mutate(date = date(datetime), 
+         run = paste(date, start_temp, sep = " : "))
 
 
 trait_data = readr::read_csv(list.files(path = "Raw_data/ctmax_data/", 

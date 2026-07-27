@@ -88,19 +88,21 @@ Several studies have shown that the temperature a CTmax assay starts at can affe
 
 While the effect of start temperature can be quite clear, the underlying mechanism is still unknown. Much of the past work has been done with terrestrial organisms (like insects) - in these systems, dehydration is a major risk during experiments. As a result, the effect of starting temperature on CTmax may reflect the changes in duration, rather than the direct effect of a different initial temperature.
 
-In theory, without confounding effects of other processes like dehydration and starvation, starting temperature should have minimal effect on CTmax so long as the assay starts below the critical temperature, or the point where damage accumulation outpaces damage repair [@faber]. This project examines how CTmax varies with starting temperature in Skistodiaptomus pallidus, a widespread freshwater calanoid copepod.
+In theory, without confounding effects of other processes like dehydration and starvation, starting temperature should have minimal effect on CTmax so long as the assay starts below the critical temperature, or the point where damage accumulation outpaces damage repair [@faber]. This project examines how CTmax varies with starting temperature in several species of widespread freshwater calanoid copepod.
 
 ## Methods
 
 We ran CTmax assays starting at different temperatures for several species, spanning a range of prior conditions.
 
 | Species                   | Acclimation History                                     | Acclimation Temperature     |
-|------------------|-----------------------------------|-------------------|
+|-------------------|-----------------------------------|-------------------|
 | Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
-| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23\*C                       |
+| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) |                             |
+| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23°C                        |
+| Leptodiaptomus siciloides | 2 generations in laboratory culture                     | 16°C                        |
 | Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
 
-We followed a standard protocol for measuring CTmax in copepods. Briefly, a small water bath was filled with 2 L of water and adjusted to the desired temperature either by adding ice or with a small aquarium heater. Once at the correct temperature, copepods were added individually into 50 mL glass vials with 10 mL of artificial freshwater medium. Vials were held in the water bath and the water was already equilibrated to the bath temperature. As such, the transition from holding temperature to starting temperature was acute.
+We followed a standard protocol for measuring CTmax in copepods. Briefly, a small water bath was filled with 2 L of water and adjusted to the desired temperature either by adding ice or with a small aquarium heater. Once at the correct temperature, mature female copepods were added individually into 50 mL glass vials with 10 mL of artificial freshwater medium. Vials were held in the water bath and the water was already equilibrated to the bath temperature. As such, the transition from holding temperature to starting temperature was acute.
 
 ## Results
 
@@ -109,7 +111,7 @@ We followed a standard protocol for measuring CTmax in copepods. Briefly, a smal
 We tracked temperature in the water bath during one replicate for each starting temperature to ensure that ramping rates behaved as expected. Temperature loggers were placed in each water bath and recorded temperature every 30 seconds (every 1 minute in some cases).
 
 ```{r}
-ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp)) + 
+ggplot(comb_data, aes(x = time_point, y = temp_c, colour = start_temp, group = run)) + 
   geom_point() + 
   labs(y = "Water Temp. (°C)",
        colour = "Start Temp. (°C)", 
@@ -125,13 +127,13 @@ Ramping rates (calculated for 5 minute intervals throughout the experiment) decr
 mean_temps = comb_data %>% 
   mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
-  group_by(start_temp, ten_min_int) %>% 
+  group_by(start_temp, ten_min_int, run) %>% 
   summarise(mean_temp = mean(temp_c))
 
 ramp_rates = comb_data %>% 
   mutate(minutes = time_point) %>% 
   drop_na(temp_c) %>% 
-  group_by(start_temp, ten_min_int) %>% 
+  group_by(start_temp, ten_min_int, run) %>% 
   nest() %>%
   mutate(
     # Fit the linear model to each interval's data
@@ -142,10 +144,10 @@ ramp_rates = comb_data %>%
   unnest(tidied) %>%
   # Filter to get just the slope (the coefficient for 'time')
   filter(term == "minutes") %>% 
-  inner_join(mean_temps, by = c("start_temp", "ten_min_int"))
+  inner_join(mean_temps, by = c("start_temp", "ten_min_int", "run"))
 
 
-ggplot(ramp_rates, aes(x = ten_min_int, y = estimate, colour = start_temp)) + 
+ggplot(ramp_rates, aes(x = ten_min_int, y = estimate, colour = start_temp, group = run)) + 
   geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
        x = "Ten Minute Interval", 
@@ -158,7 +160,7 @@ As shown in previous work with this setup, this decrease in ramping rates was st
 
 ```{r}
 
-ggplot(ramp_rates, aes(x = mean_temp, y = estimate, colour = start_temp)) + 
+ggplot(ramp_rates, aes(x = mean_temp, y = estimate, colour = start_temp, group = run)) + 
   geom_line(linewidth = 2) + 
   labs(y = "Ramp Rate (°C per minute)",
        x = "Average Temp. (°C)", 
@@ -197,28 +199,31 @@ temp.model = lme4::lmer(data = model_data,
 
 performance::check_model(temp.model)
 
-summary(temp.model)
+```
+
+```{r}
+# summary(temp.model)
 
 car::Anova(temp.model, type = "III")
-
 ```
 
 ```{r}
 
-emmeans::emmeans(temp.model, ~species) %>% plot() + labs(x = "Marginal Mean (°C)",
-                                                         y = "Species") + theme_matt()
+# emmeans::emmeans(temp.model, ~species) %>% plot() + labs(x = "Marginal Mean (°C)",
+#                                                         y = "Species") + theme_matt()
 
 ```
-
 
 ```{r}
-ggplot(trait_data, aes(x = species, y = ctmax)) + 
-  geom_boxplot() + 
-  geom_point() + 
-  labs(x = "Species", 
-       y = "CTmax (°C)") + 
-  theme_matt()
+# ggplot(trait_data, aes(x = species, y = ctmax)) + 
+#   geom_boxplot() + 
+#   geom_point() + 
+#   labs(x = "Species", 
+#        y = "CTmax (°C)") + 
+#   theme_matt()
 ```
+
+Body size was measured for a subset of individuals after experiments.
 
 ```{r}
 
