@@ -95,10 +95,10 @@ In theory, without confounding effects of other processes like dehydration and s
 We ran CTmax assays starting at different temperatures for several species, spanning a range of prior conditions.
 
 | Species                   | Acclimation History                                     | Acclimation Temperature     |
-|-------------------|-----------------------------------|-------------------|
+|-------------------|----------------------------------|-------------------|
 | Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
-| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) |                             |
-| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23°C                        |
+| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) | \~26°C                      |
+| Leptodiaptomus siciloides | \<1 week under laboratory conditions                    | 23°C                        |
 | Leptodiaptomus siciloides | 2 generations in laboratory culture                     | 16°C                        |
 | Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
 
@@ -177,7 +177,7 @@ There was no relationship between observed CTmax and the starting temperature.
 ```{r}
 
 ggplot(trait_data, aes(x = start_temp, y = ctmax)) + 
-  facet_grid(species~.) + 
+  facet_grid(species~lab_acc) + 
   geom_point(size = 3) + 
   geom_smooth(method = "lm") + 
   labs(y = "CTmax (°C)",
@@ -192,10 +192,11 @@ This is supported by the results of a linear regression, which shows no relation
 
 model_data = trait_data %>% 
   mutate(ctmax_cent = scale(ctmax, center = T, scale = F),
-         start_cent = scale(start_temp, center = T, scale = F))
+         start_cent = scale(start_temp, center = T, scale = F),
+         group_id = paste(species, "-", lab_acc, "lab acc", sep = " "))
 
 temp.model = lme4::lmer(data = model_data, 
-                ctmax ~ species * start_temp + (1|tube))
+                ctmax ~ group_id * start_temp + (1|tube))
 
 performance::check_model(temp.model)
 

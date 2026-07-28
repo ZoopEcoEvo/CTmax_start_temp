@@ -1,6 +1,6 @@
 Start temperature does not affect copepod CTmax
 ================
-2026-07-27
+2026-07-28
 
 - [Methods](#methods)
 - [Results](#results)
@@ -38,8 +38,8 @@ species, spanning a range of prior conditions.
 | Species                   | Acclimation History                                     | Acclimation Temperature     |
 |---------------------------|---------------------------------------------------------|-----------------------------|
 | Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
-| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) |                             |
-| Leptodiaptomus siciloides | 1 week under laboratory conditions                      | 23°C                        |
+| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) | ~26°C                       |
+| Leptodiaptomus siciloides | \<1 week under laboratory conditions                    | 23°C                        |
 | Leptodiaptomus siciloides | 2 generations in laboratory culture                     | 16°C                        |
 | Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
 
@@ -137,7 +137,7 @@ temperature.
 ``` r
 
 ggplot(trait_data, aes(x = start_temp, y = ctmax)) + 
-  facet_grid(species~.) + 
+  facet_grid(species~lab_acc) + 
   geom_point(size = 3) + 
   geom_smooth(method = "lm") + 
   labs(y = "CTmax (°C)",
@@ -154,10 +154,11 @@ relationship between CTmax and starting temperature.
 
 model_data = trait_data %>% 
   mutate(ctmax_cent = scale(ctmax, center = T, scale = F),
-         start_cent = scale(start_temp, center = T, scale = F))
+         start_cent = scale(start_temp, center = T, scale = F),
+         group_id = paste(species, "-", lab_acc, "lab acc", sep = " "))
 
 temp.model = lme4::lmer(data = model_data, 
-                ctmax ~ species * start_temp + (1|tube))
+                ctmax ~ group_id * start_temp + (1|tube))
 
 performance::check_model(temp.model)
 ```
@@ -169,11 +170,11 @@ car::Anova(temp.model, type = "III")
 ## Analysis of Deviance Table (Type III Wald chisquare tests)
 ## 
 ## Response: ctmax
-##                        Chisq Df Pr(>Chisq)    
-## (Intercept)        8058.5738  1    < 2e-16 ***
-## species               3.9554  1    0.04672 *  
-## start_temp            0.0173  1    0.89525    
-## species:start_temp    0.2865  1    0.59248    
+##                         Chisq Df Pr(>Chisq)    
+## (Intercept)         8517.2097  1     <2e-16 ***
+## group_id               4.2446  2     0.1198    
+## start_temp             0.0183  1     0.8923    
+## group_id:start_temp    1.3192  2     0.5171    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```

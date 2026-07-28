@@ -1,6 +1,6 @@
-exp_date,species,start_temp,tube,ctmax,length
-2026-06-30,Leptodiaptomus siciloides,16,1,37.1,
-2026-06-30,Leptodiaptomus siciloides,16,3,36.8,
-2026-06-30,Leptodiaptomus siciloides,16,5,37.7,
-2026-06-30,Leptodiaptomus siciloides,16,7,37.6,
-2026-06-30,Leptodiaptomus siciloides,16,11,37.5,
+exp_date,species,start_temp,acc_temp,lab_acc,tube,ctmax,length
+2026-06-30,Leptodiaptomus siciloides,16,23,no,1,37.1,
+2026-06-30,Leptodiaptomus siciloides,16,23,no,3,36.8,
+2026-06-30,Leptodiaptomus siciloides,16,23,no,5,37.7,
+2026-06-30,Leptodiaptomus siciloides,16,23,no,7,37.6,
+2026-06-30,Leptodiaptomus siciloides,16,23,no,11,37.5,
