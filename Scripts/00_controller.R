@@ -75,7 +75,8 @@ comb_data = bind_rows(logger_16c, logger_22c, logger_25c, logger_13c, logger_28c
 trait_data = readr::read_csv(list.files(path = "Raw_data/ctmax_data/", 
                                         pattern = "*.csv", 
                                         full.names = TRUE),
-                             show_col_types = FALSE)
+                             show_col_types = FALSE) %>% 
+  filter(ctmax > 34)
 
 if(make_report == T){
   render(input = "Output/Reports/report.Rmd", #Input the path to your .Rmd file here

@@ -94,13 +94,13 @@ In theory, without confounding effects of other processes like dehydration and s
 
 We ran CTmax assays starting at different temperatures for several species, spanning a range of prior conditions.
 
-| Species                   | Acclimation History                                     | Acclimation Temperature     |
-|-------------------|----------------------------------|-------------------|
-| Skistodiaptomus pallidus  | 10 generations in laboratory culture                    | 16°C                        |
-| Skistodiaptomus pallidus  | Field collected (\<5 hours under laboratory conditions) | \~26°C                      |
-| Leptodiaptomus siciloides | \<1 week under laboratory conditions                    | 23°C                        |
-| Leptodiaptomus siciloides | 2 generations in laboratory culture                     | 16°C                        |
-| Onychodiaptomus birgei    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
+| Species                     | Acclimation History                                     | Acclimation Temperature     |
+|------------------|-----------------------------------|-------------------|
+| *Skistodiaptomus pallidus*  | 10 generations in laboratory culture                    | 16°C                        |
+| *Skistodiaptomus pallidus*  | Field collected (\<3 days under laboratory conditions)  | 21-25°C                     |
+| *Leptodiaptomus siciloides* | Field collected (\<1 week under laboratory conditions)  | 23°C                        |
+| *Leptodiaptomus siciloides* | 2 generations in laboratory culture                     | 16°C                        |
+| *Onychodiaptomus birgei*    | Field collected (\<5 hours under laboratory conditions) | Variable field temperatures |
 
 We followed a standard protocol for measuring CTmax in copepods. Briefly, a small water bath was filled with 2 L of water and adjusted to the desired temperature either by adding ice or with a small aquarium heater. Once at the correct temperature, mature female copepods were added individually into 50 mL glass vials with 10 mL of artificial freshwater medium. Vials were held in the water bath and the water was already equilibrated to the bath temperature. As such, the transition from holding temperature to starting temperature was acute.
 
@@ -177,7 +177,7 @@ There was no relationship between observed CTmax and the starting temperature.
 ```{r}
 
 ggplot(trait_data, aes(x = start_temp, y = ctmax)) + 
-  facet_grid(species~lab_acc) + 
+  facet_grid(lab_acc~species) + 
   geom_point(size = 3) + 
   geom_smooth(method = "lm") + 
   labs(y = "CTmax (°C)",
@@ -191,12 +191,13 @@ This is supported by the results of a linear regression, which shows no relation
 ```{r}
 
 model_data = trait_data %>% 
-  mutate(ctmax_cent = scale(ctmax, center = T, scale = F),
-         start_cent = scale(start_temp, center = T, scale = F),
-         group_id = paste(species, "-", lab_acc, "lab acc", sep = " "))
+  mutate(group_id = paste(species, "-", lab_acc, "lab acc", sep = " ")) %>% 
+  group_by(group_id) %>% 
+  mutate(ctmax_cent = scale(ctmax, center = T, scale = F)[,1],
+         start_cent = scale(start_temp, center = T, scale = F)[,1])
 
 temp.model = lme4::lmer(data = model_data, 
-                ctmax ~ group_id * start_temp + (1|tube))
+                ctmax ~ group_id * start_cent + (1|tube))
 
 performance::check_model(temp.model)
 
